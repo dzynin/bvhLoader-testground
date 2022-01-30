@@ -52,7 +52,7 @@ renderer.setSize(width, height);
 renderer.setClearColor(0xffffff);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-camera.position.z = 70;
+camera.position.z = 380;
 camera.position.x = 3
 camera.position.y = 3
 
@@ -70,7 +70,7 @@ window.addEventListener("resize", () => {
     renderer.setSize(width, height);
 });
 
-// const clock = new THREE.Clock();
+const clock = new THREE.Clock();
 
 // color update test
 // geometry.attributes.color.needsUpdate = true;
@@ -89,6 +89,9 @@ const tick = () => {
     );
     controls.update();
 
+    const delta = clock.getDelta();
+
+    if (mixer) mixer.update(delta);
 
     // Render
     renderer.render(scene, camera);
