@@ -15,9 +15,7 @@ const height = window.innerHeight;
 const loader = new BVHLoader();
 
 let mixer, skeletonHelper;
-console.log("loader", loader);
 loader.load("./pirouette.bvh", function (result) {
-    console.log("result", result);
     skeletonHelper = new THREE.SkeletonHelper(result.skeleton.bones[0]);
     skeletonHelper.skeleton = result.skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
@@ -31,6 +29,8 @@ loader.load("./pirouette.bvh", function (result) {
     mixer = new THREE.AnimationMixer(skeletonHelper);
     mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
 
+}, (progress) => {
+    console.log("progress", progress);
 });
 
 // Base camera
@@ -60,10 +60,10 @@ camera.position.y = 3
 const controls = new OrbitControls(camera, renderer.domElement);
 
 //cube
-const geometry = new THREE.BoxGeometry(2, 2, 2);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// const geometry = new THREE.BoxGeometry(2, 2, 2);
+// const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+// const cube = new THREE.Mesh(geometry, material);
+// scene.add(cube);
 
 // Event: on screen resizes
 window.addEventListener("resize", () => {
@@ -82,13 +82,11 @@ const tick = () => {
     // console.log("log", cameraPositions);
 
     // Update controls
-    // controls.update();
+    controls.update();
 
     camera.lookAt(
         new THREE.Vector3(0, 0, 0)
     );
-    controls.update();
-
     const delta = clock.getDelta();
 
     if (mixer) mixer.update(delta);
