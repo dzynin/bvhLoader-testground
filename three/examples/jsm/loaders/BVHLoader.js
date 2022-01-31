@@ -138,7 +138,6 @@ class BVHLoader extends Loader {
 			- bone: the bone to read frame data from.
 		*/
 		function readFrameData(data, frameTime, bone) {
-			console.log("data", data);
 
 			// end sites have no motion data
 
@@ -327,7 +326,6 @@ class BVHLoader extends Loader {
 			if (source.type !== 'ENDSITE') {
 
 				for (let i = 0; i < source.children.length; i++) {
-
 					bone.add(toTHREEBone(source.children[i], list));
 
 				}
