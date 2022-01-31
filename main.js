@@ -1,7 +1,7 @@
 // import "./style.scss";
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { BVHLoader } from 'three/examples/jsm/loaders/BVHLoader.js';
+import * as THREE from "./three";
+import { OrbitControls } from "./three/examples/jsm/controls/OrbitControls.js";
+import { BVHLoader } from './three/examples/jsm/loaders/BVHLoader.js';
 // import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three/examples/jsm/loaders/GLTFLoader.js'
 
 
@@ -30,7 +30,7 @@ loader.load("./pirouette.bvh", function (result) {
     mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
 
 }, (progress) => {
-    console.log("progress", progress);
+    // console.log("progress", progress);
 });
 
 // Base camera
