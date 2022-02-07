@@ -1,14 +1,16 @@
 // import * as fflate from '../libs/fflate.module.js';
 import {
     AnimationClip,
-    Bone,
-    FileLoader,
-    Loader,
-    Quaternion,
-    QuaternionKeyframeTrack,
-    Skeleton,
-    Vector3,
-    VectorKeyframeTrack
+    // Bone,
+    // FileLoader,
+    // Loader,
+    // Quaternion,
+    // QuaternionKeyframeTrack,
+    // Skeleton,
+    // Vector3,
+    // VectorKeyframeTrack
+    KeyframeTrack,
+    Skeleton
 } from 'three';
 
 // const exporter = new USDZExporter();
@@ -18,7 +20,48 @@ import {
 // Exporting BVH from three.js clip and skeleton
 class BVHExporter {
 
-    validateSkeleton = (skeleton) => (skeleton.hasOwnProperty("bones") && Array.isArray(skeleton.bones) && (skeleton.bones.length > 0) && (skeleton.bones[0].type === "Bone") && skeleton.bones[0].name === "hip")
+    bvh = ``;
+
+    writeLine(line) {
+        // todo: change to setter
+        if (typeof line === "string") {
+            this.bvh += `${line}\n`;
+        } else {
+            throw new Error('Invalid line.');
+        }
+    }
+
+    validateInputs(skeleton, clip) {
+        if (!skeleton instanceof Skeleton) {
+            throw new Error('Invalid skeleton.');
+        }
+
+        if (!clip instanceof AnimationClip || !clip.validate()) {
+            throw new Error('Invalid clip.');
+        }
+
+        const fliteredTracks = clip.tracks.reduce((result, track) => {
+            // three.js's clip tracks stores all types of track in to a single array, bad for referencing, filtering out into one of any type.
+            if (result.length === 0 || result[result.length - 1].constructor.name === track.constructor.name) {
+                result.push(track);
+            }
+            return result
+        }, [])
+
+        const fliteredSkeletonBones = skeleton.bones.filter((bone) =>
+            bone.name !== "ENDSITE"
+        )
+
+        // compare both hierarchy
+        for (let i = 0; i < fliteredTracks.length; i++) {// I saw three.js's classes using let so It's should be fine.
+            if (!fliteredTracks[i].name.match(/\[(.*?)\]/)[1] === fliteredSkeletonBones[i].name) throw new Error('Unmatch hierarchies of clip and skeleton, cannot process.');
+        }
+
+    }
+
+    // constructor(validateInputs) {
+    //     this.validateInputs = validateInputs;
+    // }
 
     //arguments:
     // skeleton
@@ -26,84 +69,82 @@ class BVHExporter {
     // onDone, callback to return bvh
 
     parse(skeleton, clip, onDone) {
-        // console.log("skeleton.bones[0].type", skeleton.bones[0].name === "hip");
-        // check if both are valid.
-        if (this.validateSkeleton(skeleton) == false) {
-            throw new Error('Invalid skeleton.');
-        }
 
-        if (!clip?.validate()) {
-            throw new Error('Invalid clip.');
-        }
+        this.validateInputs(skeleton, clip);
+
+        this.writeLine("HIERARCHY");
+        
+        console.log("bvh", this.bvh);
+
         // let HIERARCHY, MOTION, BVH;
-        let HIERARCHY = `HIERARCHY\n` // Bvh's HIERARCHY part
-        // HIERARCHY += `ROOT hip\n`
+        // let HIERARCHY = `HIERARCHY\n` // Bvh's HIERARCHY part
+        // // HIERARCHY += `ROOT hip\n`
 
-        // get skeleton object to HIERARCHY
-        // three.js bones to bvh bones
-        const skeletonBones = skeleton.bones
-        function parseBone(bone) {
-// todo
-            skeletonBones.shift();
-        }
-        parseBone(skeletonBones[0])
+        // // get skeleton object to HIERARCHY
+        // // three.js bones to bvh bones
+        // const skeletonBones = skeleton.bones
+        // function parseBone(bone) {
+        //     // todo
+        //     skeletonBones.shift();
+        // }
+        // parseBone(skeletonBones[0])
 
-        function parsePoints(points) {
+        // function parsePoints(points) {
 
-            let nbVertex = 0;
-            const geometry = points.geometry;
+        //     let nbVertex = 0;
+        //     const geometry = points.geometry;
 
-            if (geometry.isBufferGeometry !== true) {
+        //     if (geometry.isBufferGeometry !== true) {
 
-                throw new Error('THREE.OBJExporter: Geometry is not of type THREE.BufferGeometry.');
+        //         throw new Error('THREE.OBJExporter: Geometry is not of type THREE.BufferGeometry.');
 
-            }
+        //     }
 
-            const vertices = geometry.getAttribute('position');
-            const colors = geometry.getAttribute('color');
-            output += 'o ' + points.name + '\n';
+        //     const vertices = geometry.getAttribute('position');
+        //     const colors = geometry.getAttribute('color');
+        //     output += 'o ' + points.name + '\n';
 
-            if (vertices !== undefined) {
+        //     if (vertices !== undefined) {
 
-                for (let i = 0, l = vertices.count; i < l; i++, nbVertex++) {
+        //         for (let i = 0, l = vertices.count; i < l; i++, nbVertex++) {
 
-                    vertex.fromBufferAttribute(vertices, i);
-                    vertex.applyMatrix4(points.matrixWorld);
-                    output += 'v ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z;
+        //             vertex.fromBufferAttribute(vertices, i);
+        //             vertex.applyMatrix4(points.matrixWorld);
+        //             output += 'v ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z;
 
-                    if (colors !== undefined) {
+        //             if (colors !== undefined) {
 
-                        color.fromBufferAttribute(colors, i);
-                        output += ' ' + color.r + ' ' + color.g + ' ' + color.b;
+        //                 color.fromBufferAttribute(colors, i);
+        //                 output += ' ' + color.r + ' ' + color.g + ' ' + color.b;
 
-                    }
+        //             }
 
-                    output += '\n';
+        //             output += '\n';
 
-                }
+        //         }
 
-            }
+        //     }
 
-            output += 'p ';
+        //     output += 'p ';
 
-            for (let j = 1, l = vertices.count; j <= l; j++) {
+        //     for (let j = 1, l = vertices.count; j <= l; j++) {
 
-                output += indexVertex + j + ' ';
+        //         output += indexVertex + j + ' ';
 
-            }
+        //     }
 
-            output += '\n'; // update index
+        //     output += '\n'; // update index
 
-            indexVertex += nbVertex;
+        //     indexVertex += nbVertex;
 
-        }// ref
+        // }// ref
 
-        // let MOTION 
-        // get animationClip to MOTION
+        // // let MOTION 
+        // // get animationClip to MOTION
 
 
-        // return result by calling callBack
-        onDone(BVH = `${HIERARCHY}\n${MOTION}`)
+        // // return result by calling callBack
+        // onDone(BVH = `${HIERARCHY}\n${MOTION}`)
 
     }
 }
