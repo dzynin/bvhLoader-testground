@@ -70,7 +70,11 @@ class BVHExporter {
 
     parseHierarchyBone(bone, skeleton, identLevel) {
         console.log("bone", bone);
-        if (!bone.parent.name) {// checks if it's root
+        let indent = ``
+        for (let i = 1; i <= identLevel; i++) {
+            indent += "  "
+        }
+        if (bone.name === skeleton.bones[0].name) {// checks if it's root
             this.writeLine(`ROOT ${bone.name}`);
             this.writeLine(`{`);
             this.writeLine(`  OFFSET 0 0 0`)
@@ -81,27 +85,39 @@ class BVHExporter {
                 });
             }
             this.writeLine(`}`);
-        } else {
-            let indent = ``
-            for (let i = 1; i <= identLevel; i++) {
-                indent += "  "
-            }
-            this.writeLine(`${indent}JOINT ${bone.name}`);
+            return
+        }
+        if (bone.name === "ENDSITE") {
+            this.writeLine(`${indent}End Site`);
             this.writeLine(`${indent}{`);
-            this.writeLine(`${indent}  OFFSET 0 0 0`)
-            this.writeLine(`${indent}  CHANNELS 3 Zrotation Xrotation Yrotation`)
+            this.writeLine(`${indent}  OFFSET ${bone.position?.x ?? 0} ${bone.position?.y ?? 0} ${bone.position?.z ?? 0}`)
             if (bone.children.length > 0) {
                 bone.children.forEach(bone => {
                     this.parseHierarchyBone(bone, skeleton, identLevel + 1)
                 });
             }
             this.writeLine(`${indent}}`);
+            return
+        }
+        else {
+            this.writeLine(`${indent}JOINT ${bone.name}`);
+            this.writeLine(`${indent}{`);
+            this.writeLine(`${indent}  OFFSET ${bone.position?.x ?? 0} ${bone.position?.y ?? 0} ${bone.position?.z ?? 0}`)
+            this.writeLine(`${indent}  CHANNELS 3 Zrotation Xrotation Yrotation`)
+            if (bone.children.length > 0 && bone.name !== skeleton.bones[0].name) {
+                bone.children.forEach(bone => {
+                    this.parseHierarchyBone(bone, skeleton, identLevel + 1)
+                });
+            }
+            this.writeLine(`${indent}}`);
+            return
         }
 
     };
 
 
     parseHierarchy(skeleton) {
+        this.writeLine(`HIERARCHY`);
         this.parseHierarchyBone(skeleton.bones[0], skeleton, 0)
     }
 
@@ -122,9 +138,12 @@ class BVHExporter {
 
         this.parseHierarchy(skeleton);
 
-        console.log(this.bvh);
-
         // this.parseMotion(clip);
+
+        onDone(this.bvh)
+
+        // console.log(this.bvh);
+
 
         // let HIERARCHY, MOTION, BVH;
         // let HIERARCHY = `HIERARCHY\n` // Bvh's HIERARCHY part

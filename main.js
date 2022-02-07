@@ -13,8 +13,10 @@ import pirouette from './bvh_samples/pirouette.bvh?raw'
 
 const canvas = document.querySelector("canvas");
 // const buttonExport = document.querySelector("button");
-const importDiv = document.getElementsByClassName("import");
-const exportDiv = document.getElementsByClassName("export");
+const codeBlockDiv = document.getElementsByClassName("code-block")[0];
+const importDiv = document.getElementsByClassName("import")[0];
+const exportDiv = document.getElementsByClassName("export")[0];
+const containerDiv = document.getElementsByClassName("container")[0];
 const scene = new THREE.Scene();
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -25,15 +27,15 @@ let clipToExport, skeletonToExport;
 
 let mixer, skeletonHelper;
 
-console.log("pirouette", pirouette);
+// console.log("pirouette", pirouette);
 
 if (importDiv) {
-    importDiv.innerHTML = pirouette
+    // console.log(importDiv);
+    importDiv.innerText = pirouette
 }
 
 loader.load("./bvh_samples/pirouette.bvh", function (result) {
 
-    // console.log("result", result);
     skeletonHelper = new THREE.SkeletonHelper(result.skeleton.bones[0]);
     skeletonHelper.skeleton = result.skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
     skeletonToExport = result.skeleton;
@@ -48,7 +50,14 @@ loader.load("./bvh_samples/pirouette.bvh", function (result) {
     // play animation
     mixer = new THREE.AnimationMixer(skeletonHelper);
     clipToExport = result.clip;
-    exporter.parse(skeletonToExport, clipToExport)
+
+    //test
+    exporter.parse(skeletonToExport, clipToExport, (result) => {
+        if (exportDiv) {
+            exportDiv.innerText = result
+        }
+    })
+
     mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
 })
 

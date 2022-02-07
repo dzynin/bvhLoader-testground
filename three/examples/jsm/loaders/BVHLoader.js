@@ -220,7 +220,7 @@ class BVHLoader extends Loader {
 			// parse node type and name
 
 			let tokens = firstline.split(/[\s]+/);
-			console.log("tokens", tokens);
+			// console.log("tokens", tokens);
 
 			if (tokens[0].toUpperCase() === 'END' && tokens[1].toUpperCase() === 'SITE') {
 
@@ -243,7 +243,7 @@ class BVHLoader extends Loader {
 			// parse OFFSET
 
 			tokens = nextLine(lines).split(/[\s]+/);
-			console.log("offset tokens", tokens);
+			// console.log("offset tokens", tokens);
 
 			if (tokens[0] !== 'OFFSET') {
 
