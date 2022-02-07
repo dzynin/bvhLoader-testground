@@ -15,22 +15,40 @@
     padding: 0;
   }
 
+  .import {
+    position: absolute;
+    display: block;
+    z-index: 99;
+    left: 1%;
+    top: 0%;
+  }
+
+  .export {
+    position: absolute;
+    display: block;
+    z-index: 99;
+    left: 50%;
+    top: 0%;
+  }
+
   button {
     position: absolute;
     display: block;
     z-index: 99;
     left: 50%;
     top: 50%;
-    }
+  }
 </style>
 
 <body>
   <div id="app"></div>
   <script type="module" src="/main.js"></script>
   <canvas></canvas>
-  <button>
+  <div class="import"></div>
+  <p class="export"></p>
+  <!-- <button>
     export bvh
-  </button>
+  </button> -->
 
 </body>
 

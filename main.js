@@ -8,10 +8,13 @@ import { BVHExporter } from './BVHExporter';
 
 // import galaxyVertexShader from "./shaders/galaxy/vertex.glsl?raw";
 // import galaxyFragmentShader from "./shaders/galaxy/fragment.glsl?raw";
+import pirouette from './bvh_samples/pirouette.bvh?raw'
 // import gsap from "gsap";
 
 const canvas = document.querySelector("canvas");
-const buttonExport = document.querySelector("button");
+// const buttonExport = document.querySelector("button");
+const importDiv = document.getElementsByClassName("import");
+const exportDiv = document.getElementsByClassName("export");
 const scene = new THREE.Scene();
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -21,7 +24,15 @@ const exporter = new BVHExporter();
 let clipToExport, skeletonToExport;
 
 let mixer, skeletonHelper;
-loader.load("./pirouette.bvh", function (result) {
+
+console.log("pirouette", pirouette);
+
+if (importDiv) {
+    importDiv.innerHTML = pirouette
+}
+
+loader.load("./bvh_samples/pirouette.bvh", function (result) {
+
     // console.log("result", result);
     skeletonHelper = new THREE.SkeletonHelper(result.skeleton.bones[0]);
     skeletonHelper.skeleton = result.skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
@@ -37,23 +48,24 @@ loader.load("./pirouette.bvh", function (result) {
     // play animation
     mixer = new THREE.AnimationMixer(skeletonHelper);
     clipToExport = result.clip;
+    exporter.parse(skeletonToExport, clipToExport)
     mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
-});
+})
 
 // Button
-const onClickExportBvh = () => {
-    if (!clipToExport || !skeletonToExport) {
-        return buttonExport.textContent = "No clip or skeleton to export."
-    }
-    exporter.parse(skeletonToExport, clipToExport)
-    // if (urlRef.current !== null) URL.revokeObjectURL(urlRef.current);
-    // urlRef.current = URL.createObjectURL(new Blob(_thatBvh, { type: "model/gltf-binary" }));
-    // const link = document.createElement("a");
-    // link.href = urlRef.current;
-    // link.download = "untitled.glb";
-    // link.click();
-};
-buttonExport.onclick = onClickExportBvh
+// const onClickExportBvh = () => {
+//     if (!clipToExport || !skeletonToExport) {
+//         return buttonExport.textContent = "No clip or skeleton to export."
+//     }
+//     exporter.parse(skeletonToExport, clipToExport)
+//     // if (urlRef.current !== null) URL.revokeObjectURL(urlRef.current);
+//     // urlRef.current = URL.createObjectURL(new Blob(_thatBvh, { type: "model/gltf-binary" }));
+//     // const link = document.createElement("a");
+//     // link.href = urlRef.current;
+//     // link.download = "untitled.glb";
+//     // link.click();
+// };
+// buttonExport.onclick = onClickExportBvh
 
 // if(skeletonHelper){
 // console.log("skeletonHelper",skeletonHelper);

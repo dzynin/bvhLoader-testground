@@ -72,6 +72,7 @@ class BVHLoader extends Loader {
 			{ name: '', channels: [], children: [] }
 		*/
 		function readBvh(lines) {
+			// console.log("lines", lines);
 
 			// read model structure
 
@@ -83,7 +84,6 @@ class BVHLoader extends Loader {
 
 			const list = []; // collects flat array of all bones
 			const root = readNode(lines, nextLine(lines), list);
-
 			// read motion data
 
 			if (nextLine(lines) !== 'MOTION') {
@@ -220,6 +220,7 @@ class BVHLoader extends Loader {
 			// parse node type and name
 
 			let tokens = firstline.split(/[\s]+/);
+			console.log("tokens", tokens);
 
 			if (tokens[0].toUpperCase() === 'END' && tokens[1].toUpperCase() === 'SITE') {
 
@@ -242,6 +243,7 @@ class BVHLoader extends Loader {
 			// parse OFFSET
 
 			tokens = nextLine(lines).split(/[\s]+/);
+			console.log("offset tokens", tokens);
 
 			if (tokens[0] !== 'OFFSET') {
 
