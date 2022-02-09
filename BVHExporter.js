@@ -4,11 +4,12 @@ import {
     // Bone,
     // FileLoader,
     // Loader,
-    // Quaternion,
-    // QuaternionKeyframeTrack,
+    Quaternion,
+    QuaternionKeyframeTrack,
     // Skeleton,
-    // Vector3,
-    // VectorKeyframeTrack
+    Vector4,
+    Vector3,
+    VectorKeyframeTrack,
     KeyframeTrack,
     Skeleton
 } from 'three';
@@ -29,7 +30,7 @@ class BVHExporter {
         this.#bvh = string
     }
     // constructor(bvh = `here`) {
-    //     this.#bvh = bvh
+    //     // this.#bvh = bvh
     // }
 
     writeLine(line) {
@@ -51,13 +52,8 @@ class BVHExporter {
             throw new Error('Invalid clip.');
         }
 
-        const fliteredTracks = clip.tracks.reduce((result, track) => {
-            // three.js's clip tracks stores all types of track in to a single array, bad for referencing, filtering out into one of any type.
-            if (result.length === 0 || result[result.length - 1].constructor.name === track.constructor.name) {
-                result.push(track);
-            }
-            return result
-        }, [])
+        //refactor
+        const fliteredTracks = clip.tracks.filter((track) => track instanceof VectorKeyframeTrack)
 
         const fliteredSkeletonBones = skeleton.bones.filter(bone => bone.name !== "ENDSITE")
 
@@ -69,7 +65,6 @@ class BVHExporter {
     }
 
     parseHierarchyBone(bone, skeleton, identLevel) {
-        console.log("bone", bone);
         let indent = ``
         for (let i = 1; i <= identLevel; i++) {
             indent += "  "
@@ -115,14 +110,115 @@ class BVHExporter {
 
     };
 
+    parseMotionFrame(tracks, bones, line) {
+        // vkft -> v -> q -> AxisAngle
+
+        function getAxisAndAngelFromQuaternion(q) {
+            const angle = 2 * Math.acos(q.w);
+            var s;
+            if (1 - q.w * q.w < 0.000001) {
+                // test to avoid divide by zero, s is always positive due to sqrt
+                // if s close to zero then direction of axis not important
+                // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
+                s = 1;
+            } else {
+                s = Math.sqrt(1 - q.w * q.w);
+            }
+            return { axis: new Vector3(q.x / s, q.y / s, q.z / s), angle };
+        }
+
+        // console.log("bones", bones);
+        // console.log("tracks", tracks);
+
+        // console.log("Vector4", Vector4.setAxisAngleFromQuaternion());
+
+        //Vector4.setAxisAngleFromQuaternion()
+
+        // console.log("bones", bones);
+        // console.log('tracks', tracks);
+
+        if (tracks.length > 2 && bones.length > 0) {
+            // root
+            const [vKFTrack, qKFTrack] = [tracks[0], tracks[1]];
+            console.log('vKFTrack', vKFTrack);
+            console.log('qKFTrack', qKFTrack);
+
+            if (line === "") {
+                // const position = { px, py, pz }
+
+                let [px, py, pz] = [
+                    parseFloat(vKFTrack.values[0].toFixed(4)),
+                    parseFloat(vKFTrack.values[1].toFixed(4)),
+                    parseFloat(vKFTrack.values[2].toFixed(4)),
+                ];
+
+                let [qx, qy, qz, qw] = [
+                    parseFloat(qKFTrack.values[0]),
+                    parseFloat(qKFTrack.values[1]),
+                    parseFloat(qKFTrack.values[2]),
+                    parseFloat(qKFTrack.values[3]),
+                ]
+
+                const quat = new Quaternion(qx, qy, qz, qw);
+
+                const result = getAxisAndAngelFromQuaternion(quat);
+
+                const { x: ax, y: ay, z: az } = result.axis;
+
+                line += `${px} ${py} ${pz} ${az} ${ay} ${ax} `// channal order of bvh
+
+                this.parseMotionFrame([...tracks.slice(2)], [...bones.slice(1)], line)
+            }
+            else {
+
+                // let [px, py, pz] = [
+                //     parseFloat(vKFTrack.values[0].toFixed(4)),
+                //     parseFloat(vKFTrack.values[1].toFixed(4)),
+                //     parseFloat(vKFTrack.values[2].toFixed(4)),
+                // ];
+
+                let [qx, qy, qz, qw] = [
+                    parseFloat(qKFTrack.values[0]),
+                    parseFloat(qKFTrack.values[1]),
+                    parseFloat(qKFTrack.values[2]),
+                    parseFloat(qKFTrack.values[3]),
+                ]
+
+                // parseFloat(tracks[1].values[0]).toFixed(parseFloat(tracks[1].values[0]) === 0 ? 1 : 4),
+
+                const quat = new Quaternion(qx, qy, qz, qw);
+
+                const result = getAxisAndAngelFromQuaternion(quat);
+
+                console.log("result", result);
+
+                const { x: ax, y: ay, z: az } = result.axis;
+
+                line += `${result.angle * az} ${result.angle * ay} ${result.angle * ax} `// channal order of bvh
+
+                this.parseMotionFrame([...tracks.slice(2)], [...bones.slice(1)], line)
+            }
+
+        } else {
+            console.log("end motion parsing");
+            this.writeLine(line);
+        }
+
+    }
+
 
     parseHierarchy(skeleton) {
         this.writeLine(`HIERARCHY`);
         this.parseHierarchyBone(skeleton.bones[0], skeleton, 0)
     }
 
-    parseMotion(clip) {
-
+    parseMotion(clip, skeleton) {
+        // this.writeLine(`MOTION`);
+        // this.writeLine(`Frames:	${clip.tracks[0].times.length}`);
+        // this.writeLine(`Frame Time:	${(clip.tracks[0].times[clip.tracks[0].times.length - 1] / (clip.tracks[0].times.length - 1)).toFixed(8)}`);
+        // todo: loop by frame
+        // const tracks = { ...clip.tracks }
+        this.parseMotionFrame(clip.tracks, skeleton.bones, "")
     }
 
     // constructor(validateInputs) {
@@ -133,12 +229,13 @@ class BVHExporter {
     // onDone, callback to return bvh
 
     parse(skeleton, clip, onDone) {
-
+        // const asd = new Vector4
+        // console.log("Vector4.setAxisAngleFromQuaternion", Vector4.setAxisAngleFromQuaternion);
         this.validateInputs(skeleton, clip);
 
         this.parseHierarchy(skeleton);
 
-        // this.parseMotion(clip);
+        this.parseMotion(clip, skeleton);
 
         onDone(this.bvh)
 

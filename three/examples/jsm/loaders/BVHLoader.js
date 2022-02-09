@@ -72,7 +72,6 @@ class BVHLoader extends Loader {
 			{ name: '', channels: [], children: [] }
 		*/
 		function readBvh(lines) {
-			// console.log("lines", lines);
 
 			// read model structure
 
@@ -95,6 +94,7 @@ class BVHLoader extends Loader {
 			// number of frames
 
 			let tokens = nextLine(lines).split(/[\s]+/);
+
 			const numFrames = parseInt(tokens[1]);
 
 			if (isNaN(numFrames)) {
@@ -115,10 +115,13 @@ class BVHLoader extends Loader {
 			}
 
 			// read frame data line by line
-
+			// console.log("numFrames", numFrames);
+			// console.log("root", root);
 			for (let i = 0; i < numFrames; i++) {
 
 				tokens = nextLine(lines).split(/[\s]+/);
+				// console.log("lines", lines.shift());
+				// console.log(tokens, i * frameTime, root);
 				readFrameData(tokens, i * frameTime, root);
 
 			}
@@ -138,7 +141,9 @@ class BVHLoader extends Loader {
 			- bone: the bone to read frame data from.
 		*/
 		function readFrameData(data, frameTime, bone) {
-
+			// console.log("data", data);
+			// console.log("frameTime", frameTime);
+			// console.log("bone", bone);
 			// end sites have no motion data
 
 			if (bone.type === 'ENDSITE') return;
@@ -192,6 +197,8 @@ class BVHLoader extends Loader {
 				}
 
 			}
+
+			// console.log("quat", quat);
 
 			// parse child nodes
 
@@ -367,6 +374,9 @@ class BVHLoader extends Loader {
 				for (let j = 0; j < bone.frames.length; j++) {
 
 					const frame = bone.frames[j];
+					// console.log(bone.name, frame);
+					// console.log(bone.name, frame.rotation);
+
 
 					times.push(frame.time);
 
@@ -385,13 +395,13 @@ class BVHLoader extends Loader {
 				}
 
 				if (scope.animateBonePositions) {
-
+					// console.log("VectorKeyframeTrack", positions);
 					tracks.push(new VectorKeyframeTrack('.bones[' + bone.name + '].position', times, positions));
 
 				}
 
 				if (scope.animateBoneRotations) {
-
+					// console.log("QuaternionKeyframeTrack", positions);
 					tracks.push(new QuaternionKeyframeTrack('.bones[' + bone.name + '].quaternion', times, rotations));
 
 				}
@@ -408,6 +418,7 @@ class BVHLoader extends Loader {
 		function nextLine(lines) {
 
 			let line;
+			// console.log("a", lines.shift().trim());
 			// skip empty lines
 			while ((line = lines.shift().trim()).length === 0) { }
 
@@ -418,8 +429,10 @@ class BVHLoader extends Loader {
 		const scope = this;
 
 		const lines = text.split(/[\r\n]+/g);
+		// console.log("lines", lines)
 
 		const bones = readBvh(lines);
+		// console.log("bones", bones);
 
 		const threeBones = [];
 		toTHREEBone(bones[0], threeBones);
