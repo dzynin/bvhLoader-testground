@@ -11,13 +11,15 @@ import {
     Vector3,
     VectorKeyframeTrack,
     KeyframeTrack,
-    Skeleton
+    Skeleton,
+    Euler
 } from 'three';
 
 // const exporter = new USDZExporter();
 // const arraybuffer = await exporter.parse( gltf.scene );
 
 //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_With_Private_Class_Features
+//https://discourse.threejs.org/t/get-euler-between-two-vector3s/5016
 
 
 // Exporting BVH from three.js clip and skeleton
@@ -110,99 +112,124 @@ class BVHExporter {
 
     };
 
-    parseMotionFrame(tracks, bones, line) {
+    parseMotionFrame(tracks, bones, frameIndex) {
         // vkft -> v -> q -> AxisAngle
+        // console.log('frameIndex', frameIndex)
+        // console.log('tracks', tracks)
+        // console.log('bones', bones)
 
-        function getAxisAndAngelFromQuaternion(q) {
-            const angle = 2 * Math.acos(q.w);
-            var s;
-            if (1 - q.w * q.w < 0.000001) {
-                // test to avoid divide by zero, s is always positive due to sqrt
-                // if s close to zero then direction of axis not important
-                // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
-                s = 1;
-            } else {
-                s = Math.sqrt(1 - q.w * q.w);
-            }
-            return { axis: new Vector3(q.x / s, q.y / s, q.z / s), angle };
-        }
+        // bvh rotation = initial rotation * motion rotation // i guess
+        // https://stackoverflow.com/questions/63243446/how-to-get-rotationeuler-angle-between-two-3d-vectors-to-make-bvh-format
+        // https://discourse.threejs.org/t/get-euler-between-two-vector3s/5016
 
-        // console.log("bones", bones);
-        // console.log("tracks", tracks);
+        let line = ''
 
-        // console.log("Vector4", Vector4.setAxisAngleFromQuaternion());
+        const fliteredBones = bones.filter(bone => bone.name !== "ENDSITE")
 
-        //Vector4.setAxisAngleFromQuaternion()
-
-        // console.log("bones", bones);
-        // console.log('tracks', tracks);
-
-        if (tracks.length > 2 && bones.length > 0) {
-            // root
-            const [vKFTrack, qKFTrack] = [tracks[0], tracks[1]];
-            console.log('vKFTrack', vKFTrack);
-            console.log('qKFTrack', qKFTrack);
-
-            if (line === "") {
-                // const position = { px, py, pz }
-
-                let [px, py, pz] = [
+        // loop though every bone, get motion q
+        fliteredBones.forEach((bone, index) => {
+            const [vKFTrack, qKFTrack] = [tracks[index], tracks[index + 1]];
+            let [mqx, mqy, mqz, mqw] = ["0.0", "0.0", "0.0", "0.0"]; // a motion rotation q of a bone in a frame
+            let initFrameQ = null;  // a initial rotation q of a bone in a frame
+            if (index === 0 && frameIndex === 0) {
+                const [rootPx, rootPy, rootPz] = [
                     parseFloat(vKFTrack.values[0].toFixed(4)),
                     parseFloat(vKFTrack.values[1].toFixed(4)),
                     parseFloat(vKFTrack.values[2].toFixed(4)),
                 ];
-
-                let [qx, qy, qz, qw] = [
-                    parseFloat(qKFTrack.values[0]),
-                    parseFloat(qKFTrack.values[1]),
-                    parseFloat(qKFTrack.values[2]),
-                    parseFloat(qKFTrack.values[3]),
-                ]
-
-                const quat = new Quaternion(qx, qy, qz, qw);
-
-                const result = getAxisAndAngelFromQuaternion(quat);
-
-                const { x: ax, y: ay, z: az } = result.axis;
-
-                line += `${px} ${py} ${pz} ${az} ${ay} ${ax} `// channal order of bvh
-
-                this.parseMotionFrame([...tracks.slice(2)], [...bones.slice(1)], line)
+                line += `${rootPx} ${rootPy} ${rootPz} `
             }
             else {
-
-                // let [px, py, pz] = [
-                //     parseFloat(vKFTrack.values[0].toFixed(4)),
-                //     parseFloat(vKFTrack.values[1].toFixed(4)),
-                //     parseFloat(vKFTrack.values[2].toFixed(4)),
-                // ];
-
-                let [qx, qy, qz, qw] = [
-                    parseFloat(qKFTrack.values[0]),
-                    parseFloat(qKFTrack.values[1]),
-                    parseFloat(qKFTrack.values[2]),
-                    parseFloat(qKFTrack.values[3]),
+                [mqx, mqy, mqz, mqw] = [
+                    qKFTrack.values[0],
+                    qKFTrack.values[1],
+                    qKFTrack.values[2],
+                    qKFTrack.values[3],
                 ]
-
-                // parseFloat(tracks[1].values[0]).toFixed(parseFloat(tracks[1].values[0]) === 0 ? 1 : 4),
-
-                const quat = new Quaternion(qx, qy, qz, qw);
-
-                const result = getAxisAndAngelFromQuaternion(quat);
-
-                console.log("result", result);
-
-                const { x: ax, y: ay, z: az } = result.axis;
-
-                line += `${result.angle * az} ${result.angle * ay} ${result.angle * ax} `// channal order of bvh
-
-                this.parseMotionFrame([...tracks.slice(2)], [...bones.slice(1)], line)
             }
 
-        } else {
-            console.log("end motion parsing");
-            this.writeLine(line);
-        }
+            const motionFrameQ = new Quaternion(mqx, mqy, mqz, mqw);
+            console.log("motionFrameQ", motionFrameQ);
+            const angle = bone.quaternion.angleTo(motionFrameQ);
+            console.log("angle", angle);
+            // const conjugate = new Quaternion(iqx, iqy, iqz, iqw)
+            // console.log("asd", conjugate);
+        });
+
+        this.writeLine(line);
+
+        // console.log("line", line);
+
+        // root
+        // const [rootPx, rootPy, rootPz] = [tracks[frameIndex].values[0], tracks[frameIndex].values[1], tracks[frameIndex].values[2]];
+        // line += `${px} ${py} ${pz} `
+        // console.log("tracks[frameIndex]", tracks[frameIndex]);
+        // console.log("line", line);
+
+        // dep
+
+        // if (tracks.length > 2 && bones.length > 0) {
+        //     // root
+        //     const [vKFTrack, qKFTrack] = [tracks[0], tracks[1]];
+        //     // console.log('vKFTrack', vKFTrack);
+        //     // console.log('qKFTrack', qKFTrack);
+
+        //     if (line === "") {
+        //         // const position = { px, py, pz }
+
+        //         let [px, py, pz] = [
+        //             parseFloat(vKFTrack.values[0].toFixed(4)),
+        //             parseFloat(vKFTrack.values[1].toFixed(4)),
+        //             parseFloat(vKFTrack.values[2].toFixed(4)),
+        //         ];
+
+        //         let [qx, qy, qz, qw] = [
+        //             parseFloat(qKFTrack.values[0]),
+        //             parseFloat(qKFTrack.values[1]),
+        //             parseFloat(qKFTrack.values[2]),
+        //             parseFloat(qKFTrack.values[3]),
+        //         ]
+
+        //         let e = new Euler();
+        // const quat = new Quaternion(qx, qy, qz, qw);
+        //         e = e.setFromQuaternion(quat);
+        //         //Zrotation Xrotation Yrotation
+        //         const { x: ex, y: ey, z: ez } = e;
+
+        //         line += `${px} ${py} ${pz} ${ez} ${ex} ${ey} `// channal order of bvh
+
+        //         this.parseMotionFrame(tracks, bones, line, frameIndex)
+        //     }
+        //     else {
+
+        //         let [qx, qy, qz, qw] = [
+        //             parseFloat(qKFTrack.values[0]),
+        //             parseFloat(qKFTrack.values[1]),
+        //             parseFloat(qKFTrack.values[2]),
+        //             parseFloat(qKFTrack.values[3]),
+        //         ]
+
+        //         // parseFloat(tracks[1].values[0]).toFixed(parseFloat(tracks[1].values[0]) === 0 ? 1 : 4),
+
+        //         let e = new Euler();
+
+        //         const frameQ = new Quaternion(qx, qy, qz, qw);
+
+        //         e = e.setFromQuaternion(frameQ, "XYZ");
+
+        //         //Zrotation Xrotation Yrotation
+        //         const { x: ex, y: ey, z: ez } = e;
+
+        //         line += `${ez} ${ex} ${ey} `// channal order of bvh
+
+        //         this.parseMotionFrame(tracks, bones, line, frameIndex)
+        //     }
+
+        // } else {
+        //     console.log("end motion frame parsing");
+        //     this.writeLine(line);
+        //     this.parseMotionFrame(tracks, bones, "", frameIndex++)
+        // }
 
     }
 
@@ -213,12 +240,22 @@ class BVHExporter {
     }
 
     parseMotion(clip, skeleton) {
+        const frameCount = clip.tracks[0].times.length;
         // this.writeLine(`MOTION`);
-        // this.writeLine(`Frames:	${clip.tracks[0].times.length}`);
+        // this.writeLine(`Frames:	${frameCount}`);
         // this.writeLine(`Frame Time:	${(clip.tracks[0].times[clip.tracks[0].times.length - 1] / (clip.tracks[0].times.length - 1)).toFixed(8)}`);
-        // todo: loop by frame
         // const tracks = { ...clip.tracks }
-        this.parseMotionFrame(clip.tracks, skeleton.bones, "")
+        // console.log("tracks", tracks);
+
+
+        // loop, every frames
+        // for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+        //     // console.log("frameIndex", frameIndex);
+        //     // func, passing bone, track, write line.
+        //     this.parseMotionFrame(clip.tracks, skeleton.bones, frameIndex)
+        // }
+        // frame 0
+        this.parseMotionFrame(clip.tracks, skeleton.bones, 0)
     }
 
     // constructor(validateInputs) {
