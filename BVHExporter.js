@@ -12,7 +12,11 @@ import {
     VectorKeyframeTrack,
     KeyframeTrack,
     Skeleton,
-    Euler
+    Euler,
+    BoxGeometry,
+    MeshBasicMaterial,
+    Mesh,
+    Scene
 } from 'three';
 
 // const exporter = new USDZExporter();
@@ -130,7 +134,9 @@ class BVHExporter {
         fliteredBones.forEach((bone, index) => {
             const [vKFTrack, qKFTrack] = [tracks[index], tracks[index + 1]];
             let [mqx, mqy, mqz, mqw] = ["0.0", "0.0", "0.0", "0.0"]; // a motion rotation q of a bone in a frame
+            // console.log("bone", bone);
             let initFrameQ = null;  // a initial rotation q of a bone in a frame
+            let offsetFrameQ = null;
             if (index === 0 && frameIndex === 0) {
                 const [rootPx, rootPy, rootPz] = [
                     parseFloat(vKFTrack.values[0].toFixed(4)),
@@ -138,25 +144,34 @@ class BVHExporter {
                     parseFloat(vKFTrack.values[2].toFixed(4)),
                 ];
                 line += `${rootPx} ${rootPy} ${rootPz} `
+                initFrameQ = new Vector3();
+                offsetFrameQ = new Vector3();
             }
             else {
+                // initFrameQ = new Vector3()
+                // console.log("bone", bone);
+
+                offsetFrameQ = new Vector3(vKFTrack.values[0], vKFTrack.values[1], vKFTrack.values[2]);
+                // console.log("offsetFrameQ", offsetFrameQ);
                 [mqx, mqy, mqz, mqw] = [
                     qKFTrack.values[0],
                     qKFTrack.values[1],
                     qKFTrack.values[2],
                     qKFTrack.values[3],
                 ]
+
             }
 
-            const motionFrameQ = new Quaternion(mqx, mqy, mqz, mqw);
-            console.log("motionFrameQ", motionFrameQ);
-            const angle = bone.quaternion.angleTo(motionFrameQ);
-            console.log("angle", angle);
+            // const motionFrameQ = new Quaternion(mqx, mqy, mqz, mqw);
+            // console.log("motionFrameQ", motionFrameQ);
+            // const angle = bone.quaternion.angleTo(motionFrameQ);
+            // console.log("angle", angle);
             // const conjugate = new Quaternion(iqx, iqy, iqz, iqw)
             // console.log("asd", conjugate);
         });
 
-        this.writeLine(line);
+        // this.writeLine(line);
+
 
         // console.log("line", line);
 
@@ -274,7 +289,9 @@ class BVHExporter {
 
         this.parseMotion(clip, skeleton);
 
-        onDone(this.bvh)
+        // onDone(this.bvh)
+
+        onDone()
 
         // console.log(this.bvh);
 
