@@ -135,43 +135,45 @@ class BVHExporter {
             const [vKFTrack, qKFTrack] = [tracks[index], tracks[index + 1]];
             let [mqx, mqy, mqz, mqw] = ["0.0", "0.0", "0.0", "0.0"]; // a motion rotation q of a bone in a frame
             // console.log("bone", bone);
-            let initFrameQ = null;  // a initial rotation q of a bone in a frame
-            let offsetFrameQ = null;
+            let initFrameQ = null; // a initial rotation q of a bone in a frame
+            let motionFrameQ = null;
             if (index === 0 && frameIndex === 0) {
+                // hip of first frame is to be ignore 
                 const [rootPx, rootPy, rootPz] = [
                     parseFloat(vKFTrack.values[0].toFixed(4)),
                     parseFloat(vKFTrack.values[1].toFixed(4)),
                     parseFloat(vKFTrack.values[2].toFixed(4)),
                 ];
                 line += `${rootPx} ${rootPy} ${rootPz} `
-                initFrameQ = new Vector3();
-                offsetFrameQ = new Vector3();
+                initFrameQ = new Quaternion()
+                motionFrameQ = new Quaternion()
             }
             else {
-                initFrameQ = new Vector3(
-                    parseFloat(vKFTrack.values[0]),
-                    parseFloat(vKFTrack.values[1]),
-                    parseFloat(vKFTrack.values[2])
-                )
-                console.log("initFrameQ", initFrameQ);
+                // console.log("bone.quaternion", bone.quaternion);
+                initFrameQ = bone.quaternion.copy(bone.quaternion);
+                // initFrameQ.copy(bone.quaternion)
+                // console.log("initFrameQ", initFrameQ);
 
-                offsetFrameQ = new Vector3(vKFTrack.values[0], vKFTrack.values[1], vKFTrack.values[2]);
-                // console.log("offsetFrameQ", offsetFrameQ);
                 [mqx, mqy, mqz, mqw] = [
                     qKFTrack.values[0],
                     qKFTrack.values[1],
                     qKFTrack.values[2],
                     qKFTrack.values[3],
                 ]
+                motionFrameQ = new Quaternion(mqx, mqy, mqz, mqw);
 
+                // caucalating angles
+                console.log("initFrameQ", initFrameQ);
+                initFrameQ = initFrameQ.invert()
+                console.log("after inverting initFrameQ", initFrameQ);
+                console.log("motionFrameQ", motionFrameQ);
+                const result = initFrameQ.multiply(motionFrameQ)
+                console.log("result", result);
+                
+                
             }
 
-            // const motionFrameQ = new Quaternion(mqx, mqy, mqz, mqw);
-            // console.log("motionFrameQ", motionFrameQ);
-            // const angle = bone.quaternion.angleTo(motionFrameQ);
-            // console.log("angle", angle);
-            // const conjugate = new Quaternion(iqx, iqy, iqz, iqw)
-            // console.log("asd", conjugate);
+
         });
 
         // this.writeLine(line);
