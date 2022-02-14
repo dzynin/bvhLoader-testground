@@ -36,7 +36,7 @@ if (importDiv) {
 
 let hipVs = [];
 
-const geometry = new THREE.BoxGeometry(4, 4, 4);
+const geometry = new THREE.BoxGeometry(2, 2, 2);
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
 loader.load("./bvh_samples/pirouette.bvh", function (result) {
@@ -51,7 +51,7 @@ loader.load("./bvh_samples/pirouette.bvh", function (result) {
     }
     if (hipVs.length > 0) {
         hipVs.forEach((v, i) => {
-            console.log("here");
+            // console.log("here");
             const cube = new THREE.Mesh(geometry, material);
             cube.position.set(v.x, v.y, v.z);
             scene.add(cube);

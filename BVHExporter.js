@@ -148,8 +148,12 @@ class BVHExporter {
                 offsetFrameQ = new Vector3();
             }
             else {
-                // initFrameQ = new Vector3()
-                // console.log("bone", bone);
+                initFrameQ = new Vector3(
+                    parseFloat(vKFTrack.values[0]),
+                    parseFloat(vKFTrack.values[1]),
+                    parseFloat(vKFTrack.values[2])
+                )
+                console.log("initFrameQ", initFrameQ);
 
                 offsetFrameQ = new Vector3(vKFTrack.values[0], vKFTrack.values[1], vKFTrack.values[2]);
                 // console.log("offsetFrameQ", offsetFrameQ);
@@ -256,7 +260,7 @@ class BVHExporter {
 
     parseMotion(clip, skeleton) {
         const frameCount = clip.tracks[0].times.length;
-        // this.writeLine(`MOTION`);
+        this.writeLine(`MOTION`);
         // this.writeLine(`Frames:	${frameCount}`);
         // this.writeLine(`Frame Time:	${(clip.tracks[0].times[clip.tracks[0].times.length - 1] / (clip.tracks[0].times.length - 1)).toFixed(8)}`);
         // const tracks = { ...clip.tracks }
@@ -289,9 +293,9 @@ class BVHExporter {
 
         this.parseMotion(clip, skeleton);
 
-        // onDone(this.bvh)
+        onDone(this.bvh)
 
-        onDone()
+        // onDone()
 
         // console.log(this.bvh);
 
